@@ -55,7 +55,7 @@ execute_script() {
         
         # Log the execution to /tmp/log.txt
         date_str=$(date '+%Y-%m-%d %H:%M:%S')
-        echo "$date_str - $script_name" >> /tmp/log.txt
+        echo "$date_str - $script_number $script_name" >> /tmp/log.txt
     else
         echo "Invalid script number: $script_number"
     fi

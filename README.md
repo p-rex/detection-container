@@ -202,13 +202,13 @@ echo "3" > /tmp/execute
 cat /tmp/log.txt
 ```
 
-ログには、実行日時とスクリプト名が以下の形式で記録されます：
+ログには、実行日時、スクリプト番号、スクリプト名が以下の形式で記録されます：
 
 ```
-YYYY-MM-DD HH:MM:SS - スクリプト名
+YYYY-MM-DD HH:MM:SS - スクリプト番号 スクリプト名
 ```
 
 例：
 ```
-2025-10-08 16:15:00 - Execution_via_Command-Line_Interface.sh
+2025-10-08 16:15:00 - 3 Execution_via_Command-Line_Interface.sh
 ```
