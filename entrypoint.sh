@@ -51,11 +51,22 @@ execute_script() {
         local index=$((script_number - 1))
         local script_name="${eitems[$index]}"
         echo "Executing script: $script_name"
+        
+        # Execute script and capture return code
+        set +e  # Temporarily disable exit on error
         $edir$script_name
+        local script_exit_code=$?
+        set -e  # Re-enable exit on error
         
         # Log the execution to /tmp/log.txt
         date_str=$(date '+%Y-%m-%d %H:%M:%S')
         echo "$date_str - $script_number $script_name" >> /tmp/log.txt
+        
+        # Return the script's exit code
+        if [ $script_exit_code -ne 0 ]; then
+            echo "Script execution failed with exit code: $script_exit_code"
+            return $script_exit_code
+        fi
     else
         echo "Invalid script number: $script_number"
     fi
@@ -70,8 +81,9 @@ while true; do
         script_number=$(cat /tmp/execute)
         if [ ! -z "$script_number" ]; then
             echo "Found script number: $script_number"
-            execute_script $script_number
-            # Delete the file after execution
+            # Execute script and ensure file is deleted regardless of script success or failure
+            execute_script $script_number || echo "Script execution failed with error code: $?"
+            # Delete the file after execution (using trap to ensure deletion even if script fails)
             rm -f /tmp/execute
         fi
     fi
