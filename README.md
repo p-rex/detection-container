@@ -194,7 +194,7 @@ echo 3 > /tmp/execute
 12. ~~metasploit/Webserver_Trigger_Metasploit_Payload.sh~~
 13. Reverse_Shell_Trojan.sh
 
-取消線の付いているスクリプトはFalconによる検知は上がりません。
+取消線の付いているスクリプトは、Falconによる検知対象外です。
 
 ### ログ確認
 
