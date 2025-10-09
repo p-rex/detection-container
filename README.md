@@ -165,7 +165,7 @@ For AWS ECS Fargate, use the following commands to run the detection container:
 1. コンテナを起動します：
 
 ```bash
-sudo docker run --rm -d quay.io/crowdstrike/detection-container
+sudo docker run --rm -d ghcr.io/p-rex/detection-container
 ```
 
 2. コンテナ内で特定のスクリプトを実行するには、`/tmp/execute`ファイルに実行したいスクリプトの番号を書き込みます：
@@ -175,7 +175,7 @@ sudo docker run --rm -d quay.io/crowdstrike/detection-container
 docker exec -it <コンテナID> /bin/bash
 
 # スクリプト番号を指定して実行（例：3番のスクリプトを実行）
-echo "3" > /tmp/execute
+echo 3 > /tmp/execute
 ```
 
 スクリプト番号は以下に対応しています：
@@ -193,6 +193,8 @@ echo "3" > /tmp/execute
 11. Webserver_Bash_Reverse_Shell.sh
 12. ~~metasploit/Webserver_Trigger_Metasploit_Payload.sh~~
 13. Reverse_Shell_Trojan.sh
+
+取消線の付いているスクリプトはFalconによる検知は上がりません。
 
 ### ログ確認
 
