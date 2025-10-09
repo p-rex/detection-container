@@ -180,18 +180,18 @@ echo "3" > /tmp/execute
 
 スクリプト番号は以下に対応しています：
 
-1. ContainerDrift_Via_File_Creation_and_Execution.sh
+1. ~~ContainerDrift_Via_File_Creation_and_Execution.sh~~
 2. Defense_Evasion_via_Rootkit.sh
 3. Execution_via_Command-Line_Interface.sh
 4. Exfiltration_via_Exfiltration_Over_Alternative_Protocol.sh
 5. Command_Control_via_Remote_Access.sh
 6. Collection_via_Automated_Collection.sh
 7. Credential_Access_via_Credential_Dumping.sh
-8. Persistence_via_External_Remote_Services.sh
-9. Webserver_Suspicious_Terminal_Spawn.sh
-10. Webserver_Unexpected_Child_of_Web_Service.sh
+8. ~~Persistence_via_External_Remote_Services.sh~~
+9. ~~Webserver_Suspicious_Terminal_Spawn.sh~~
+10. ~~Webserver_Unexpected_Child_of_Web_Service.sh~~
 11. Webserver_Bash_Reverse_Shell.sh
-12. metasploit/Webserver_Trigger_Metasploit_Payload.sh
+12. ~~metasploit/Webserver_Trigger_Metasploit_Payload.sh~~
 13. Reverse_Shell_Trojan.sh
 
 ### ログ確認
