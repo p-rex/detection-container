@@ -1,6 +1,70 @@
 # CrowdStrike Docker Detection Container
 
-[![Container Repository on Quay](https://quay.io/repository/crowdstrike/detection-container/status "Container Repository on Quay")](https://quay.io/repository/crowdstrike/detection-container)
+
+## ファイルモニタリングモード
+
+このコンテナは、ファイルモニタリングモードで動作するよう改変しています。このモードでは、`/tmp/execute`ファイルを監視し、ファイル内に書かれた番号に対応するスクリプトを実行します。
+
+### 使用方法
+
+1. コンテナを起動します：
+
+```bash
+sudo docker run --rm -d ghcr.io/p-rex/detection-container
+```
+
+2. コンテナ内で特定のスクリプトを実行するには、`/tmp/execute`ファイルに実行したいスクリプトの番号を書き込みます：
+
+```bash
+# コンテナに接続
+docker exec -it <コンテナID> /bin/bash
+
+# スクリプト番号を指定して実行（例：3番のスクリプトを実行）
+echo 3 > /tmp/execute
+```
+
+スクリプト番号は以下に対応しています：
+
+1. ~~ContainerDrift_Via_File_Creation_and_Execution.sh~~
+2. Defense_Evasion_via_Rootkit.sh
+3. Execution_via_Command-Line_Interface.sh
+4. Exfiltration_via_Exfiltration_Over_Alternative_Protocol.sh
+5. Command_Control_via_Remote_Access.sh
+6. Collection_via_Automated_Collection.sh
+7. Credential_Access_via_Credential_Dumping.sh
+8. ~~Persistence_via_External_Remote_Services.sh~~
+9. ~~Webserver_Suspicious_Terminal_Spawn.sh~~
+10. ~~Webserver_Unexpected_Child_of_Web_Service.sh~~
+11. Webserver_Bash_Reverse_Shell.sh
+12. ~~metasploit/Webserver_Trigger_Metasploit_Payload.sh~~
+13. Reverse_Shell_Trojan.sh
+
+>[!NOTE]
+> - 取消線の付いているスクリプトは、Falconによる検知対象外です。
+> - No8のスクリプトは完了まで1分以上かかります。存在しないIPへ通信を行い、タイムアウト待ちが発生するためです。
+
+### ログ確認
+
+スクリプト実行のログは`/tmp/log.txt`に記録されます。以下のコマンドでログを確認できます：
+
+```bash
+cat /tmp/log.txt
+```
+
+ログには、実行日時、スクリプト番号、スクリプト名が以下の形式で記録されます：
+
+```
+YYYY-MM-DD HH:MM:SS - スクリプト番号 スクリプト名
+```
+
+例：
+```
+2025-10-08 16:15:00 - 3 Execution_via_Command-Line_Interface.sh
+```
+
+以下、オリジナルのREADME
+---
+
 
 This container will create detections and preventions only on Linux hosts, container platforms (e.g. OpenShift), and containers themselves, which are protected by a CrowdStrike sensor.
 
@@ -156,61 +220,3 @@ For AWS ECS Fargate, use the following commands to run the detection container:
 > - The CloudWatch log group is created before running the task
 > - CrowdStrike Falcon Container Sensor is deployed for detections to appear in the console
 
-## ファイルモニタリングモード
-
-このコンテナは、ファイルモニタリングモードで動作するよう改変しています。このモードでは、`/tmp/execute`ファイルを監視し、ファイル内に書かれた番号に対応するスクリプトを実行します。
-
-### 使用方法
-
-1. コンテナを起動します：
-
-```bash
-sudo docker run --rm -d ghcr.io/p-rex/detection-container
-```
-
-2. コンテナ内で特定のスクリプトを実行するには、`/tmp/execute`ファイルに実行したいスクリプトの番号を書き込みます：
-
-```bash
-# コンテナに接続
-docker exec -it <コンテナID> /bin/bash
-
-# スクリプト番号を指定して実行（例：3番のスクリプトを実行）
-echo 3 > /tmp/execute
-```
-
-スクリプト番号は以下に対応しています：
-
-1. ~~ContainerDrift_Via_File_Creation_and_Execution.sh~~
-2. Defense_Evasion_via_Rootkit.sh
-3. Execution_via_Command-Line_Interface.sh
-4. Exfiltration_via_Exfiltration_Over_Alternative_Protocol.sh
-5. Command_Control_via_Remote_Access.sh
-6. Collection_via_Automated_Collection.sh
-7. Credential_Access_via_Credential_Dumping.sh
-8. ~~Persistence_via_External_Remote_Services.sh~~
-9. ~~Webserver_Suspicious_Terminal_Spawn.sh~~
-10. ~~Webserver_Unexpected_Child_of_Web_Service.sh~~
-11. Webserver_Bash_Reverse_Shell.sh
-12. ~~metasploit/Webserver_Trigger_Metasploit_Payload.sh~~
-13. Reverse_Shell_Trojan.sh
-
-取消線の付いているスクリプトは、Falconによる検知対象外です。
-
-### ログ確認
-
-スクリプト実行のログは`/tmp/log.txt`に記録されます。以下のコマンドでログを確認できます：
-
-```bash
-cat /tmp/log.txt
-```
-
-ログには、実行日時、スクリプト番号、スクリプト名が以下の形式で記録されます：
-
-```
-YYYY-MM-DD HH:MM:SS - スクリプト番号 スクリプト名
-```
-
-例：
-```
-2025-10-08 16:15:00 - 3 Execution_via_Command-Line_Interface.sh
-```
