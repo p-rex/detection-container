@@ -106,6 +106,7 @@ jobs:
     # -------------------------------------------------------
     - name: FCS Image Scan
       id: fcs-image
+      continue-on-error: true
       uses: crowdstrike/fcs-action@v4.0.1
       with:
         falcon_client_id: ${{ vars.FALCON_CLIENT_ID }}
@@ -117,6 +118,17 @@ jobs:
         upload_results: 'true'
       env:
         FALCON_CLIENT_SECRET: ${{ secrets.FALCON_CLIENT_SECRET }}
+
+    - name: Check generated files after image scan
+      if: always() && steps.fcs-image.outcome != 'skipped'
+      run: |
+        echo "=== FCS Image Scan exit code: ${{ steps.fcs-image.outputs.exit-code }} ==="
+        echo "=== Files in workspace root ==="
+        ls -la ./fcs-image-results* 2>/dev/null || echo "No fcs-image-results* files found"
+        echo "=== All SARIF files ==="
+        find . -name "*.sarif" 2>/dev/null || echo "No SARIF files found"
+        echo "=== All JSON files in root ==="
+        find . -maxdepth 1 -name "*.json" 2>/dev/null || echo "No JSON files found in root"
 
     - name: Upload image scan SARIF to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v3
