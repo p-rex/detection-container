@@ -3,6 +3,7 @@ name: Container Build
 permissions:
   contents: read
   packages: write
+  security-events: write  # SARIF アップロードに必要
 
 on:
   workflow_dispatch:  # 手動実行
@@ -22,6 +23,33 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    # -------------------------------------------------------
+    # FCS IaC スキャン: Dockerfile のセキュリティチェック
+    # ビルド前に実行し、問題を早期検出する
+    # -------------------------------------------------------
+    - name: FCS IaC Scan (Dockerfile)
+      id: fcs-iac
+      uses: crowdstrike/fcs-action@v4.0.1
+      with:
+        falcon_client_id: ${{ vars.FALCON_CLIENT_ID }}
+        falcon_region: 'us-1'
+        scan_type: iac
+        path: './Dockerfile'
+        platforms: 'Dockerfile'
+        severities: 'critical,high,medium'
+        report_formats: 'sarif'
+        output_path: './fcs-iac-results.sarif'
+        project_name: '${{ github.repository }}/${{ github.ref_name }}'
+      env:
+        FALCON_CLIENT_SECRET: ${{ secrets.FALCON_CLIENT_SECRET }}
+
+    - name: Upload Dockerfile scan SARIF to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v3
+      if: always() && steps.fcs-iac.outcome != 'skipped'
+      with:
+        sarif_file: ./fcs-iac-results.sarif
+        category: fcs-iac-dockerfile
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -53,3 +81,29 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+
+    # -------------------------------------------------------
+    # FCS イメージスキャン: ビルドしたコンテナイメージの脆弱性スキャン
+    # ビルド後、プッシュ前に実行する
+    # -------------------------------------------------------
+    - name: FCS Image Scan
+      id: fcs-image
+      uses: crowdstrike/fcs-action@v4.0.1
+      with:
+        falcon_client_id: ${{ vars.FALCON_CLIENT_ID }}
+        falcon_region: 'us-1'
+        scan_type: image
+        image: ghcr.io/${{ github.repository }}:latest
+        report_formats: 'sarif'
+        output_path: './fcs-image-results.sarif'
+        upload_results: 'true'
+        project_name: '${{ github.repository }}/${{ github.ref_name }}'
+      env:
+        FALCON_CLIENT_SECRET: ${{ secrets.FALCON_CLIENT_SECRET }}
+
+    - name: Upload image scan SARIF to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v3
+      if: always() && steps.fcs-image.outcome != 'skipped'
+      with:
+        sarif_file: ./fcs-image-results.sarif
+        category: fcs-image-scan
