@@ -101,8 +101,8 @@ jobs:
     # -------------------------------------------------------
     # FCS イメージスキャン: ビルドしたコンテナイメージの脆弱性スキャン
     # ビルド後に実行する
-    # イメージスキャンの output_path はファイルパスで指定する必要がある
-    # .sarif を指定すると内部で .json に変換して実行後、SARIF に変換する
+    # output_path は .json で指定（イメージスキャンはファイルパス必須）
+    # 後続ステップで json_to_sarif_converter.py を使い SARIF に変換する
     # -------------------------------------------------------
     - name: FCS Image Scan
       id: fcs-image
@@ -113,26 +113,31 @@ jobs:
         falcon_region: 'us-1'
         scan_type: image
         image: ghcr.io/${{ github.repository }}:latest
-        report_formats: 'sarif'
-        output_path: './fcs-image-results.sarif'
+        report_formats: 'json'
+        output_path: './fcs-image-results.json'
         upload_results: 'true'
       env:
         FALCON_CLIENT_SECRET: ${{ secrets.FALCON_CLIENT_SECRET }}
 
-    - name: Check generated files after image scan
+    - name: Convert image scan JSON to SARIF
+      id: convert-image-sarif
       if: always() && steps.fcs-image.outcome != 'skipped'
       run: |
-        echo "=== FCS Image Scan exit code: ${{ steps.fcs-image.outputs.exit-code }} ==="
-        echo "=== Files in workspace root ==="
-        ls -la ./fcs-image-results* 2>/dev/null || echo "No fcs-image-results* files found"
-        echo "=== All SARIF files ==="
-        find . -name "*.sarif" 2>/dev/null || echo "No SARIF files found"
-        echo "=== All JSON files in root ==="
-        find . -maxdepth 1 -name "*.json" 2>/dev/null || echo "No JSON files found in root"
+        if [ -f "./fcs-image-results.json" ]; then
+          echo "Converting fcs-image-results.json to SARIF..."
+          # fcs-action リポジトリ内の converter を使用
+          python3 /home/runner/work/_actions/crowdstrike/fcs-action/v4.0.1/json_to_sarif_converter.py \
+            ./fcs-image-results.json ./fcs-image-results.sarif
+          echo "converted=true" >> "$GITHUB_OUTPUT"
+          echo "Conversion complete: fcs-image-results.sarif"
+        else
+          echo "fcs-image-results.json not found, skipping conversion"
+          echo "converted=false" >> "$GITHUB_OUTPUT"
+        fi
 
     - name: Upload image scan SARIF to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v3
-      if: always() && steps.fcs-image.outcome != 'skipped'
+      if: always() && steps.convert-image-sarif.outputs.converted == 'true'
       with:
         sarif_file: './fcs-image-results.sarif'
         category: fcs-image-scan
