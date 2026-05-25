@@ -22,4 +22,5 @@ RUN dnf -y install wget file zip vim-common bind-utils ruby php httpd php-fpm ho
 
 EXPOSE 80
 
+
 ENTRYPOINT ["/entrypoint.sh"]
