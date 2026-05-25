@@ -101,6 +101,7 @@ jobs:
     # -------------------------------------------------------
     # FCS イメージスキャン: ビルドしたコンテナイメージの脆弱性スキャン
     # ビルド後、プッシュ前に実行する
+    # output_path はディレクトリ指定にする（FCS CLI 2.2.0+ の仕様）
     # -------------------------------------------------------
     - name: FCS Image Scan
       id: fcs-image
@@ -111,15 +112,28 @@ jobs:
         scan_type: image
         image: ghcr.io/${{ github.repository }}:latest
         report_formats: 'sarif'
-        output_path: './fcs-image-results.sarif'
+        output_path: './fcs-image-results/'
         upload_results: 'true'
-        project_name: '${{ github.repository }}/${{ github.ref_name }}'
       env:
         FALCON_CLIENT_SECRET: ${{ secrets.FALCON_CLIENT_SECRET }}
 
+    - name: Find Image Scan SARIF report file
+      id: find-image-sarif
+      if: always() && steps.fcs-image.outcome != 'skipped'
+      run: |
+        SARIF_FILE=$(find ./fcs-image-results/ -name "*.sarif" 2>/dev/null | head -1)
+        if [ -z "$SARIF_FILE" ]; then
+          echo "No SARIF file found in ./fcs-image-results/"
+          echo "found=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "Found SARIF: $SARIF_FILE"
+          echo "path=$SARIF_FILE" >> "$GITHUB_OUTPUT"
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Upload image scan SARIF to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v3
-      if: always() && steps.fcs-image.outcome != 'skipped'
+      if: always() && steps.find-image-sarif.outputs.found == 'true'
       with:
-        sarif_file: ./fcs-image-results.sarif
+        sarif_file: ${{ steps.find-image-sarif.outputs.path }}
         category: fcs-image-scan
