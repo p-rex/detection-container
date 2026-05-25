@@ -27,6 +27,8 @@ jobs:
     # -------------------------------------------------------
     # FCS IaC スキャン: Dockerfile のセキュリティチェック
     # ビルド前に実行し、問題を早期検出する
+    # FCS CLI 2.2.0+ の仕様: SARIF を含む複数フォーマット出力時は
+    # output_path をディレクトリパスにする必要がある
     # -------------------------------------------------------
     - name: FCS IaC Scan (Dockerfile)
       id: fcs-iac
@@ -39,16 +41,30 @@ jobs:
         platforms: 'Dockerfile'
         severities: 'critical,high,medium'
         report_formats: 'sarif'
-        output_path: './fcs-iac-results.sarif'
+        output_path: './fcs-iac-results/'
         project_name: '${{ github.repository }}/${{ github.ref_name }}'
       env:
         FALCON_CLIENT_SECRET: ${{ secrets.FALCON_CLIENT_SECRET }}
 
+    - name: Find IaC SARIF report file
+      id: find-iac-sarif
+      if: always() && steps.fcs-iac.outcome != 'skipped'
+      run: |
+        SARIF_FILE=$(find ./fcs-iac-results/ -name "*.sarif" 2>/dev/null | head -1)
+        if [ -z "$SARIF_FILE" ]; then
+          echo "No SARIF file found in ./fcs-iac-results/"
+          echo "found=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "Found SARIF: $SARIF_FILE"
+          echo "path=$SARIF_FILE" >> "$GITHUB_OUTPUT"
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Upload Dockerfile scan SARIF to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v3
-      if: always() && steps.fcs-iac.outcome != 'skipped'
+      if: always() && steps.find-iac-sarif.outputs.found == 'true'
       with:
-        sarif_file: ./fcs-iac-results.sarif
+        sarif_file: ${{ steps.find-iac-sarif.outputs.path }}
         category: fcs-iac-dockerfile
 
     - name: Set up Docker Buildx
